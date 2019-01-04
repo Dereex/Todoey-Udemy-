@@ -11,14 +11,13 @@ import UIKit
 class TodoListViewController: UITableViewController {
 
     var iteamArray = [TodoItem]()
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("TodoList.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let items = defaults.array(forKey: "TodoListArray") as? [TodoItem] {
-            iteamArray = items
-        }
+        loadDate()
+        
     }
     
     //MARK: TableView DataSource Method
@@ -48,9 +47,8 @@ class TodoListViewController: UITableViewController {
         
         iteamArray[indexPath.row].done = !iteamArray[indexPath.row].done
         
-        tableView.reloadData()
+        saveData()
         tableView.deselectRow(at: indexPath, animated: true)
-        
     }
     
     //MARK: Add new Items
@@ -63,12 +61,12 @@ class TodoListViewController: UITableViewController {
         
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
             if textField.text != nil{
+                
                 let item = TodoItem()
                 item.tittle = textField.text!
-                self.iteamArray.append(item)
-                self.defaults.set(self.iteamArray, forKey: "TodoListArray")
-                self.tableView.reloadData()
                 
+                self.iteamArray.append(item)
+                self.saveData()
             }
         }
         
@@ -78,6 +76,30 @@ class TodoListViewController: UITableViewController {
         }
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveData() {
+        let encoder = PropertyListEncoder()
+        
+        do{
+            let data = try encoder.encode(iteamArray)
+            try data.write(to: dataFilePath!)
+        }catch{
+            print("Error is \(error)")
+        }
+        
+        tableView.reloadData()
+    }
+    
+    func loadDate() {
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do{
+                iteamArray = try decoder.decode([TodoItem].self, from: data)
+            }catch{
+                print(error)
+            }
+        }
     }
     
 }
