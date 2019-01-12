@@ -8,24 +8,34 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+
+class CategoryViewController: SwipeTableViewController {
     
     let realm = try! Realm()
     var categoryArray: Results<Category>?
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         loadDate()
+        tableView.rowHeight = 80.0
+        tableView.separatorStyle = .none
     }
-
-
     
     //MARK: - TableView DataSource Methods
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        
-        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "No Category added yeat"
+      
+         let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        if let category = categoryArray?[indexPath.row]{
+            cell.textLabel?.text = category.name
+            cell.backgroundColor = UIColor(hexString: category.color)
+            cell.textLabel?.textColor = ContrastColorOf(UIColor(hexString: category.color)!, returnFlat: true)
+            
+        }
         
         return cell
     }
@@ -64,6 +74,7 @@ class CategoryViewController: UITableViewController {
             if textField.text != nil {
                 let category = Category()
                 category.name = textField.text!
+                category.color = UIColor.randomFlat.hexValue()
                 self.save(category: category)
             }
         }
@@ -89,4 +100,15 @@ class CategoryViewController: UITableViewController {
     }
     
     
+    //MARK: - Delete date from swipre
+    
+    override func updateModel(at indexPath: IndexPath) {
+        do{
+            try self.realm.write {
+                self.realm.delete(self.categoryArray![indexPath.row])
+            }
+        }catch{
+            print("Delete Error: \(error)")
+        }
+    }
 }
